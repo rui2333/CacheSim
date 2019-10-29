@@ -24,6 +24,7 @@
  */
 #include "cache_arrays.h"
 #include "hash.h"
+#include "visualize.h"
 #include "repl_policies.h"
 
 /* Set-associative array implementation */
@@ -182,6 +183,11 @@ Line* SetAssocArray::refresh(const Address lineAddr, const MemReq* req, uint32_t
 void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint32_t candidate) {
     memAccess ++;
     rp->replaced(candidate);
+    Line former_line = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    // get line from memory
+    for(int i = 0 ; i < 64; i ++){
+        former_line.Byte[i]= (*((char*) ((array[candidate] << 6) + i)));
+    }
     array[candidate] = lineAddr;
     // initialize each parameters
     Line line = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  
@@ -197,11 +203,16 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
     // on eviction
     if(index_ref[candidate]){
         printf("ocean address %ld\n", lineAddr);
-        line = cTol_orig(index_ref[candidate]);
-        line = xxor(line, line_orig);
-        for(int i = 0; i < 64; i++){
-            data_array[candidate * 64 + i] = (char) line.Byte[i];
+        Line reference = cTol_orig(index_ref[candidate]);
+        if(countLine(xxor(reference, line_orig)) > countLine(line_orig)){
+            line = xxor(reference, line_orig);
+            for(int i = 0; i < 64; i++){
+                data_array[candidate * 64 + i] = (char) line.Byte[i];
+                data_array[index_ref[candidate] * 64 + i] = (char) line.Byte[i];
+            }
         }
+        else
+            line = compare(line_orig, candidate);
         sizes[candidate][1] = countLine(line);
     }
     // simple insertion
@@ -246,6 +257,7 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
    }*/
     	
     rp->update(candidate, req);
+    TestPrint(candidate);
 }
 
 /* ZCache implementation */

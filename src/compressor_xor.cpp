@@ -61,6 +61,7 @@ Line compare(Line line, uint32_t tag)
 	//printline(min);
     for(int i = 0; i < size; i++){
         data_array[ret * size + i] = (char) min.Byte[i];
+        data_array[tag * size + i] = (char) min.Byte[i];
     }
     return min;
 }

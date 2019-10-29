@@ -29,15 +29,27 @@ void visualize(int start, int end){
 	}
 }
 void TestPrint(int index){
+	int zeroes_orig = 0;
+	int zeroes_xor = 0;
 	printf("ORIG: ");
 	for(int i = 0 ; i < 64; i++){
-		printf("|%d", (int)data_array_orig[index * 64 +i]);	
+		printf("|%u", (int)data_array_orig[index * 64 + i]);
+		zeroes_orig += count_zeroes((unsigned int)data_array_orig[index * 64 + i]);
 	}
 	printf("|\n");
 	printf("XOR: ");
 	for(int i = 0 ; i < 64; i++){
-		printf("|%d", (int)data_array[index * 64 +i]);	
+		printf("|%u", (int)data_array[index * 64 +i]);	
+		zeroes_xor += count_zeroes((unsigned int)data_array[index * 64 + i]);
 	}
 	printf("|\n");
+	printf("zeroes_orig is %u and zeroes_xor is %u\n", zeroes_orig, zeroes_xor);
 }
-
+unsigned int count_zeroes(unsigned int n) {
+    int count = 0;
+    while (n) {
+        count += n & 1;
+        n /= 2;
+    }
+    return (32-count);
+}

@@ -5,4 +5,4 @@
 void print_arr();
 void visualize(int start, int end);
 void TestPrint(int index);
-
+unsigned int count_zeroes(unsigned int n);

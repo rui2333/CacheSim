@@ -1,9 +1,9 @@
 Running on: oghenefegopc
-Start time: Mon Oct 28 14:42:21 2019
-Heartbeat time: Mon Oct 28 14:46:06 2019
+Start time: Tue Oct 29 13:33:08 2019
+Heartbeat time: Tue Oct 29 13:36:47 2019
 Stats since start:
  86 phases
  860000 cycles
- 3822 cycles/s
-Stats since last heartbeat (5s):
- 0 cycles/s
+ 3926 cycles/s
+Stats since last heartbeat (8s):
+ 1250 cycles/s

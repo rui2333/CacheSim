@@ -7,6 +7,8 @@
 #include <sstream>
 #include <fstream>
 #include <math.h>
+#include <iostream>     // std::cout
+#include <algorithm>    // std::min
 #include "visualize.h"
 using namespace std;
 extern char* data_array;// = (char*)malloc(32768 * 64);

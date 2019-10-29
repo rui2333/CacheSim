@@ -10,4 +10,7 @@ __PYCACHE__
 zsim/.nfs0000000000589ab800002a63
 zsim/.nfs0000000000bc24a000003f49
 zsim/.nfs0000000000bc24e400003dd7
+zsim/.nfs000000000205cb7500000667
+zsim/2dconv_output.large.0.mat
+zsim/histeq_output.large.0.mat
 *.dblite
