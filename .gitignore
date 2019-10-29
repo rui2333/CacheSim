@@ -1,0 +1,13 @@
+deps
+build
+tests
+.vscode
+*.h5
+*.out
+*.log.*
+__PYCACHE__
+*.pyc
+zsim/.nfs0000000000589ab800002a63
+zsim/.nfs0000000000bc24a000003f49
+zsim/.nfs0000000000bc24e400003dd7
+*.dblite
