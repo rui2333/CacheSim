@@ -81,7 +81,7 @@ Line compare_perfect(Line line, uint32_t tag)
     Line compare = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     while(index < numLines)
     {	
-		if(!initialized[index][2] || occupied[index][2]){
+		if(!initialized[index][2] || occupied[index][0]){
 			index++;
 			continue;		
 		}
@@ -388,8 +388,8 @@ double best_compression_rate(){
   int orig = 0;
   // iterate through
   for(int i = 0 ; i < 32768; i++){
-    Line line = cTol_orig(i);
-    if(!Empty(line)){
+    if(initialized[i][0] == 1){
+      Line line = cTol_orig(i);
       int length = countLine(line);
       orig += length;
       for(int j = 0 ; j < 32768; j ++){
@@ -408,13 +408,13 @@ double best_compression_rate(){
  * @param data_array_perf perfect data_array
  * @return the maximum compression rate 
  */
-double best_possible_rate(char* data_array_perf){
+double best_possible_rate(){
   int ret = 0;
   int orig = 0;
   // iterate through
   for(int i = 0 ; i < 32768; i++){
-    Line line = cTol_orig(i);
-    if(!Empty(line)){
+    if(initialized[i][0] == 1){
+      Line line = cTol_orig(i);
       orig += countLine(line);
       ret += countLine(cTol_perf(i));
     }

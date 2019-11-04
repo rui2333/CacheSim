@@ -1,19 +1,13 @@
 #include "compressor.h"
-double average = 0;
-double average_sub = 0;
-double average_orig = 0;
-double flip_average = 0;
-double flip_average_sub = 0;
-double flip_average_orig = 0;
-int total = 0;
-int max_size = 32768 * 64;
-int compress_size = 0;
-int compress_size_sub = 0;
-int compress_size_orig = 0;
-int flip_compress_size = 0;
-int flip_compress_size_sub = 0;
-int flip_compress_size_orig = 0;
-int uncompress_size = 0;
+
+int orig_size;
+int xor_size;
+int orig_size_bdi;
+int xor_size_bdi;
+int flip_orig_size;
+int flip_xor_size;
+int flip_orig_size_bdi;
+int flip_xor_size_bdi;
 FILE *f = fopen("file.txt", "w");
 FILE *f1 = fopen("fileRaw.txt", "w");
 
@@ -22,16 +16,16 @@ void printCache(){
 
 }
 
-double calcRate(int alloc, int comp, int flip){
-    double ret = (static_cast<double>(comp)/static_cast<double>(alloc));
-    average = (average * total + ret)/static_cast<double>(total + 1);
-printf("total: %d, rate: %d / %d = %.1f, average: %.1f\n", total, comp, alloc, ret, average);
-    flip_average = (flip_average * total + flip)/static_cast<double>(total + 1);
-    total ++; 
+double calcRate(int alloc, int comp, int orig_flip, int flip){
+    orig_size_bdi += alloc;
+    xor_size_bdi += comp;
+    flip_orig_size_bdi += orig_flip; 
+    flip_xor_size_bdi += flip;
 	//printf("%d / %d\n", comp, alloc);
-    fprintf(f, "%1f, %1f, ", flip_average, average);
-    return ret;
+    fprintf(f, "%1f, %1f\n", (static_cast<double>(flip_orig_size_bdi)/static_cast<double>(flip_xor_size_bdi)), (static_cast<double>(orig_size_bdi)/static_cast<double>(xor_size_bdi)));
+    return 0;
 }
+/*
 double calcRate_sub(int alloc, int comp, int flip){
     double ret = (static_cast<double>(comp)/static_cast<double>(alloc));
     average_sub = (average_sub * (total-1) + ret)/static_cast<double>(total);
@@ -48,17 +42,17 @@ double calcRate_orig(int alloc, int comp, int flip){
     fprintf(f, "%1f, %1f\n", flip_average_orig, average_orig);
     return ret;
 }
-
-double calcRate_raw(int alloc, int comp, int flip){
-    double ret = (static_cast<double>(comp)/static_cast<double>(alloc));
-    average = (average * total + ret)/static_cast<double>(total + 1);
-printf("total: %d, rate: %d / %d = %.1f, average: %.1f\n", total, comp, alloc, ret, average);
-    flip_average = (flip_average * total + flip)/static_cast<double>(total + 1);
-    total ++; 
+*/
+double calcRate_raw(int alloc, int comp, int orig_flip, int flip){
+    orig_size += alloc;
+    xor_size += comp;
+    flip_orig_size += orig_flip; 
+    flip_xor_size += flip;
 	//printf("%d / %d\n", comp, alloc);
-    fprintf(f1, "%1f, %1f, ", flip_average, average);
-    return ret;
+    fprintf(f1, "%1f, %1f\n", (static_cast<double>(flip_orig_size)/static_cast<double>(flip_xor_size)), (static_cast<double>(orig_size)/static_cast<double>(xor_size)));
+    return 0;
 }
+/*
 double calcRate_sub_raw(int alloc, int comp, int flip){
     double ret = (static_cast<double>(comp)/static_cast<double>(alloc));
     average_sub = (average_sub * (total-1) + ret)/static_cast<double>(total);
@@ -74,7 +68,7 @@ double calcRate_orig_raw(int alloc, int comp, int flip){
 	//printf("%d / %d\n", comp, alloc);
     fprintf(f1, "%1f, %1f\n", flip_average_orig, average_orig);
     return ret;
-}
+}*/
 Line compress(Line line){
     Line num = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     Line first = {line.Byte[3],line.Byte[2],line.Byte[1],line.Byte[0],0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};

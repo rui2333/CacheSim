@@ -39,14 +39,15 @@ extern char* data_array_perf; // = (char*)malloc(32768 * 64);
 Address record[1024];
 extern char* data_array_orig;//[327680 * 64];
 Line evicted_line;
-extern int max_size;
-extern int compress_size;
-extern int compress_size_sub;
-extern int compress_size_orig;
-extern int uncompress_size;
-extern int flip_compress_size;
-extern int flip_compress_size_sub;
-extern int flip_compress_size_orig;
+int uncompress_size = 0;
+extern int orig_size;
+extern int xor_size;
+extern int orig_size_bdi;
+extern int xor_size_bdi;
+extern int flip_orig_size;
+extern int flip_xor_size;
+extern int flip_orig_size_bdi;
+extern int flip_xor_size_bdi;
 extern int l1;
 extern int initialized[32768][3];
 int memAccess = 0;
@@ -126,9 +127,9 @@ void SetAssocArray::postinsert(const Address lineAddr, const MemReq* req, uint32
 		line_sub = compress(line_sub);
 		line_orig = compress(line_orig);
 		
-		calcRate(64, countLine(line), countFlip(line));
+		//calcRate(64, countLine(line), countFlip(line));
 		//calcRate_sub(64, countLine(line_sub), countFlip(line_sub));
-		calcRate_orig(64, countLine(line_orig), countFlip(line_orig));
+		//calcRate_orig(64, countLine(line_orig), countFlip(line_orig));
     }
 	
     for(int i = 0; i < 1024; i++){
@@ -218,7 +219,11 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
     // simple insertion
     else{
         printf("island address %ld\n", lineAddr);
+        Line reference = cTol_orig(index_ref[candidate]);
         line = compare(line_orig, candidate);
+        calcRate_raw(0, -countLine(reference), 0, -countFlip(reference));
+        reference = compress(reference);
+        calcRate(0, -countLine(reference), 0, -countFlip(reference));
     }
     // sub: not in use
     if(index_ref_sub[candidate]){
@@ -231,30 +236,27 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
   	}
   	else
      line_sub = compare_sub(line_orig, candidate);
-   /*  
+     
    if(memAccess % 100 == 0){
-     occupied[candidate][2] = 0;
-     occupied[ref_perf[candidate]][2] = 0;
      Line perf = compare_perfect(line_orig, candidate);
    }
 		
-    calcRate_raw(64, countLine(line), countFlip(line));
-    calcRate_orig_raw(64, countLine(line_orig), countFlip(line_orig));
-*/
+    calcRate_raw(countLine(line_orig), countLine(line), countFlip(line_orig), countFlip(line));
+    //calcRate_orig_raw(64, countLine(line_orig), countFlip(line_orig));
+
     // apply BDI on lines
     line = compress(line);
     line_sub = compress(line_sub);
     line_orig = compress(line_orig);
     
     // print result to files
-    calcRate(64, countLine(line), countFlip(line));
-    calcRate_orig(64, countLine(line_orig), countFlip(line_orig));
-/*   
+    calcRate(countLine(line_orig), countLine(line), countFlip(line_orig), countFlip(line));
+   
    if(memAccess % 100 == 0){
      printf("here.\n");
-     fprintf(ability_file, "best rate:%1f ", best_compression_rate());
-     fprintf(compressibility, "best possible rate: %1f", best_compression_rate());
-   }*/
+     fprintf(ability_file, "best rate:%1f ", best_possible_rate());
+     //fprintf(compressibility, "best possible rate: %1f", best_compression_rate());
+   }
     	
     rp->update(candidate, req);
     TestPrint(candidate);
