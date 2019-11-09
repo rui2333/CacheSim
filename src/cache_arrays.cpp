@@ -33,11 +33,11 @@ extern int index_ref_sub[32768];
 extern int ref_perf[32768];
 extern int sizes[32768][3];
 extern int size;
-extern char* data_array; // = (char*)malloc(32768 * 64);
-extern char* data_array_sub; // = (char*)malloc(32768 * 64);
-extern char* data_array_perf; // = (char*)malloc(32768 * 64);
+extern unsigned char* data_array; // = (char*)malloc(32768 * 64);
+extern unsigned char* data_array_sub; // = (char*)malloc(32768 * 64);
+extern unsigned char* data_array_perf; // = (char*)malloc(32768 * 64);
 Address record[1024];
-extern char* data_array_orig;//[327680 * 64];
+extern unsigned char* data_array_orig;//[327680 * 64];
 Line evicted_line;
 int uncompress_size = 0;
 extern int orig_size;
@@ -86,7 +86,8 @@ uint32_t SetAssocArray::preinsert(const Address lineAddr, const MemReq* req, Add
 
     // get the address of candidate
 	*wbLineAddr = array[candidate];
-	//printf("Finding %u: %lld to replace\n", candidate, data_array[candidate]);
+	//GIRI
+	printf("Finding %u: 0x%x to replace\n", candidate, data_array[candidate]);
     return candidate;
 }
 
@@ -99,24 +100,26 @@ void SetAssocArray::postinsert(const Address lineAddr, const MemReq* req, uint32
 	if(l1 == 1){
 		line_orig = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 		for(int i = 0 ; i < 64; i ++){
-				line_orig.Byte[i]= (*((char*) ((array[candidate] << 6) + i)));
+				line_orig.Byte[i]= (*((unsigned char*) ((array[candidate] << 6) + i)));
 		}
 		sizes[candidate][0] = countLine(line_orig);
 		if(index_ref[candidate]){
 		    line = cTol_orig(index_ref[candidate]);
 		    line = xxor(line, line_orig);
 		    for(int i = 0; i < 64; i++){
-		        data_array[candidate * 64 + i] = (char) line.Byte[i];
+		        data_array[candidate * 64 + i] = (unsigned char) line.Byte[i];
 		    }
 		    sizes[candidate][1] = countLine(line);
 		  }
-		else
-		    line = compare(line_orig, candidate);
+		else {
+        	printf("We are in postinsertL1 for address 0x%x\n", (unsigned long int)lineAddr);
+		    line = compare_perfect(line_orig, candidate);
+		}
 		if(index_ref_sub[candidate]){
 			line_sub = cTol_orig(index_ref_sub[candidate]);
 			line_sub = sub(line_sub, line_orig);
 			for(int i = 0; i < 64; i++){
-			    data_array_sub[candidate * 64 + i] = (char) line_sub.Byte[i];
+			    data_array_sub[candidate * 64 + i] = (unsigned char) line_sub.Byte[i];
 			}
 			sizes[candidate][2] = countLine(line_sub);
 	  	}
@@ -195,21 +198,21 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
     Line line_sub = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  
     Line line_orig = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};     
 
-    printf("We are in postinsertL2 for addr %ld\n", lineAddr);
+    printf("We are in postinsertL2 for addr 0x%x\n", lineAddr);
     // get line from memory
     for(int i = 0 ; i < 64; i ++){
-            line_orig.Byte[i]= (*((char*) ((array[candidate] << 6) + i)));
+            line_orig.Byte[i]= (*((unsigned char*) ((array[candidate] << 6) + i)));
     }
     sizes[candidate][0] = countLine(line_orig);
     // on eviction
     if(index_ref[candidate]){
-        printf("ocean address %ld\n", lineAddr);
+        printf("ocean address 0x%x\n", lineAddr);
         Line reference = cTol_orig(index_ref[candidate]);
         if(countLine(xxor(reference, line_orig)) > countLine(line_orig)){
             line = xxor(reference, line_orig);
             for(int i = 0; i < 64; i++){
-                data_array[candidate * 64 + i] = (char) line.Byte[i];
-                data_array[index_ref[candidate] * 64 + i] = (char) line.Byte[i];
+                data_array[candidate * 64 + i] = (unsigned char) line.Byte[i];
+                data_array[index_ref[candidate] * 64 + i] = (unsigned char) line.Byte[i];
             }
         }
         else
@@ -218,7 +221,7 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
     }
     // simple insertion
     else{
-        printf("island address %ld\n", lineAddr);
+        printf("island address 0x%x\n", lineAddr);
         Line reference = cTol_orig(index_ref[candidate]);
         line = compare(line_orig, candidate);
         calcRate_raw(0, -countLine(reference), 0, -countFlip(reference));
@@ -230,7 +233,7 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
         line_sub = cTol_orig(index_ref_sub[candidate]);
         line_sub = sub(line_sub, line_orig);
         for(int i = 0; i < 64; i++){
-            data_array_sub[candidate * 64 + i] = (char) line_sub.Byte[i];
+            data_array_sub[candidate * 64 + i] = (unsigned char) line_sub.Byte[i];
         }
         sizes[candidate][2] = countLine(line_sub);
   	}
@@ -252,11 +255,11 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
     // print result to files
     calcRate(countLine(line_orig), countLine(line), countFlip(line_orig), countFlip(line));
    
-   if(memAccess % 100 == 0){
-     printf("here.\n");
-     fprintf(ability_file, "best rate:%1f ", best_possible_rate());
-     //fprintf(compressibility, "best possible rate: %1f", best_compression_rate());
-   }
+   //if(memAccess % 100 == 0){
+   //  printf("here.\n");
+   //  fprintf(ability_file, "best rate:%1f ", best_possible_rate());
+   //  //fprintf(compressibility, "best possible rate: %1f", best_compression_rate());
+   //}
     	
     rp->update(candidate, req);
     TestPrint(candidate);

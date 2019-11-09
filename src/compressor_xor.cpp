@@ -1,10 +1,10 @@
 #include "compressor.h"
 #define numLines 32768
 #define size 64
-char* data_array_orig = (char*)malloc(numLines * size); // OG data array : L2 cache
-char* data_array = (char*)malloc(numLines * size);      // XOR data_array
-char* data_array_sub = (char*)malloc(numLines * size);  // SUB data_array
-char* data_array_perf = (char*) malloc(numLines * size);// COMPLEX_PERFECT data_array
+unsigned char* data_array_orig = (unsigned char*)malloc(numLines * size); // OG data array : L2 cache
+unsigned char* data_array = (unsigned char*)malloc(numLines * size);      // XOR data_array
+unsigned char* data_array_sub = (unsigned char*)malloc(numLines * size);  // SUB data_array
+unsigned char* data_array_perf = (unsigned char*) malloc(numLines * size);// COMPLEX_PERFECT data_array
 int index_ref[numLines];                                // reference to each other for XOR pair
 int index_ref_sub[numLines];                            //                             SUB 
 int ref_perf[numLines];                                 //                             COMPLEX_PERFECT
@@ -60,8 +60,8 @@ Line compare(Line line, uint32_t tag)
 	printf("size of line_xor: %d\n", sizes[ret][1]);
 	//printline(min);
     for(int i = 0; i < size; i++){
-        data_array[ret * size + i] = (char) min.Byte[i];
-        data_array[tag * size + i] = (char) min.Byte[i];
+        data_array[ret * size + i] = (unsigned char) min.Byte[i];
+        data_array[tag * size + i] = (unsigned char) min.Byte[i];
     }
     return min;
 }
@@ -107,7 +107,7 @@ Line compare_perfect(Line line, uint32_t tag)
 	}
 	//printline(min);
     for(int i = 0; i < size; i++){
-        data_array_perf[ret * size + i] = (char) min.Byte[i];
+        data_array_perf[ret * size + i] = (unsigned char) min.Byte[i];
     }
     return min;
 }
@@ -272,7 +272,7 @@ void LongToLine (Line line, uint32_t tag){
     sizes[tag][0] = countLine(line);
 	//printf("size of line: %d\n", sizes[tag][0]);
     for(int i = 0; i < size; i++){
-        data_array_orig[tag * size + i] = (char) line.Byte[i];
+        data_array_orig[tag * size + i] = (unsigned char) line.Byte[i];
     }
 }
 int countLine(Line line){
@@ -429,8 +429,8 @@ Line replace(Line line, uint32_t tag){
        result = xxor(line, B);
        Line shift = result;
        for(int i = 0; i < size; i++){
-           data_array[tag * size + i] = (char) shift.Byte[i];
-           data_array[index_ref[tag] * size + i] = (char) shift.Byte[i];
+           data_array[tag * size + i] = (unsigned char) shift.Byte[i];
+           data_array[index_ref[tag] * size + i] = (unsigned char) shift.Byte[i];
        }
     }
     return result;
@@ -442,8 +442,8 @@ Line replace_sub(Line line, uint32_t tag){
        result = sub(line, B);
        Line shift = result;
        for(int i = 0; i < size; i++){
-           data_array_sub[tag * size + i] = (char) shift.Byte[i];
-           data_array_sub[index_ref[tag] * size + i] = (char) shift.Byte[i];
+           data_array_sub[tag * size + i] = (unsigned char) shift.Byte[i];
+           data_array_sub[index_ref[tag] * size + i] = (unsigned char) shift.Byte[i];
        }
     }
     return result;
@@ -465,7 +465,7 @@ int recover(int lineAddr){
             sizes[i][1] = countLine(temp);
             ret += sizes[i][1];
             for(int j = 0; j < size; j++){
-                data_array[i * size + j] = (char) temp.Byte[i];
+                data_array[i * size + j] = (unsigned char) temp.Byte[i];
             }
             index_ref[i] = i;
             occupied[i][0] = 1;
@@ -489,7 +489,7 @@ int recover_sub(int lineAddr){
                 sizes[i][2] = countLine(temp);
                 ret += sizes[i][2];
                 for(int j = 0; j < size; j++){
-                    data_array_sub[i * size + j] = (char) temp.Byte[i];
+                    data_array_sub[i * size + j] = (unsigned char) temp.Byte[i];
                 }
                 index_ref_sub[i] = i;
                 newTag = i;
@@ -535,7 +535,7 @@ Line compare_sub(Line line, uint32_t tag)
 	printf("size of line_sub: %d\n", sizes[ret][2]);
 	//printline(min);
     for(int i = 0; i < size; i++){
-        data_array_sub[ret * size + i] = (char) min.Byte[i];
+        data_array_sub[ret * size + i] = (unsigned char) min.Byte[i];
     }
     return min;
 }
