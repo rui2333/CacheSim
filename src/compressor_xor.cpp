@@ -7,7 +7,7 @@ char* data_array_sub = (char*)malloc(numLines * size);  // SUB data_array
 char* data_array_perf = (char*) malloc(numLines * size);// COMPLEX_PERFECT data_array
 int index_ref[numLines];                                // reference to each other for XOR pair
 int index_ref_sub[numLines];                            //                             SUB 
-int ref_perf[numLines];                                 //                             COMPLEX_PERFECT
+int index_ref_perf[numLines];                                 //                             COMPLEX_PERFECT
 int sizes[numLines][3];                                 // sizes of entries (as for bancwidth)
 int occupied[numLines][3];                              // availabilty of entries
 int initialized[numLines][3];                           // status of entries
@@ -81,7 +81,7 @@ Line compare_perfect(Line line, uint32_t tag)
     Line compare = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     while(index < numLines)
     {	
-		if(!initialized[index][2] || occupied[index][0]){
+		if(!initialized[index][2] || occupied[index][2]){
 			index++;
 			continue;		
 		}
@@ -100,8 +100,8 @@ Line compare_perfect(Line line, uint32_t tag)
 		initialized[tag][2] = 1;	
 	}
 	else{
-		ref_perf[ret] = tag;
-		ref_perf[tag] = ret;
+		index_ref_perf[ret] = tag;
+		index_ref_perf[tag] = ret;
 		occupied[ret][2] = 1;
 		occupied[tag][2] = 1;
 	}

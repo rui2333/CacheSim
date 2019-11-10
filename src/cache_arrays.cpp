@@ -30,7 +30,7 @@
 /* Set-associative array implementation */
 extern int index_ref[32768];
 extern int index_ref_sub[32768];
-extern int ref_perf[32768];
+extern int index_ref_perf[32768];
 extern int sizes[32768][3];
 extern int size;
 extern char* data_array; // = (char*)malloc(32768 * 64);
@@ -167,6 +167,7 @@ uint32_t SetAssocArray::preinsertL2(const Address lineAddr, const MemReq* req, A
 
     // get the address of candidate
 	*wbLineAddr = array[candidate];
+    cout << "preinsertion on " << candidate << " of " << hex << array[candidate] << endl;
     return candidate;
 }
 
@@ -183,6 +184,12 @@ Line* SetAssocArray::refresh(const Address lineAddr, const MemReq* req, uint32_t
 
 void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint32_t candidate) {
     memAccess ++;
+    cout << memAccess << endl;
+    if (initialized[candidate][0])
+    {
+        cout << "postinsertion on " << candidate << " of " << hex << array[candidate] << endl;
+    }
+    
     rp->replaced(candidate);
     Line former_line = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     // get line from memory
@@ -190,12 +197,13 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
         former_line.Byte[i]= (*((char*) ((array[candidate] << 6) + i)));
     }
     array[candidate] = lineAddr;
+    cout << "postinsertion now on " << candidate << " of " << hex << array[candidate] << endl;
     // initialize each parameters
     Line line = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  
     Line line_sub = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  
     Line line_orig = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};     
 
-    printf("We are in postinsertL2 for addr %ld\n", lineAddr);
+    //printf("We are in postinsertL2 for addr %ld\n", lineAddr);
     // get line from memory
     for(int i = 0 ; i < 64; i ++){
             line_orig.Byte[i]= (*((char*) ((array[candidate] << 6) + i)));
@@ -203,8 +211,12 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
     sizes[candidate][0] = countLine(line_orig);
     // on eviction
     if(index_ref[candidate]){
-        printf("ocean address %ld\n", lineAddr);
+        printf("ocean address %lx\n", lineAddr);
         Line reference = cTol_orig(index_ref[candidate]);
+        Line reference_xor = cTol(index_ref[candidate]);
+        calcRate_raw(0, countLine(reference_xor), 0, countFlip(reference_xor));
+        reference_xor = compress(reference_xor);
+        calcRate(0, countLine(reference_xor), 0, countFlip(reference_xor));
         if(countLine(xxor(reference, line_orig)) > countLine(line_orig)){
             line = xxor(reference, line_orig);
             for(int i = 0; i < 64; i++){
@@ -212,36 +224,49 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
                 data_array[index_ref[candidate] * 64 + i] = (char) line.Byte[i];
             }
         }
-        else
+        else{
             line = compare(line_orig, candidate);
+            if(occupied[candidate][0]){
+            Line reference = cTol_orig(index_ref[candidate]);
+            calcRate_raw(0, -countLine(reference), 0, -countFlip(reference));
+            reference = compress(reference);
+            calcRate(0, -countLine(reference), 0, -countFlip(reference));
+            }
+        }
         sizes[candidate][1] = countLine(line);
     }
     // simple insertion
     else{
-        printf("island address %ld\n", lineAddr);
-        Line reference = cTol_orig(index_ref[candidate]);
+        printf("island address %lx\n", lineAddr);
         line = compare(line_orig, candidate);
-        calcRate_raw(0, -countLine(reference), 0, -countFlip(reference));
-        reference = compress(reference);
-        calcRate(0, -countLine(reference), 0, -countFlip(reference));
+        if(occupied[candidate][0]){
+          Line reference = cTol_orig(index_ref[candidate]);
+          calcRate_raw(0, -countLine(reference), 0, -countFlip(reference));
+          reference = compress(reference);
+          calcRate(0, -countLine(reference), 0, -countFlip(reference));
+        }
     }
     // sub: not in use
-    if(index_ref_sub[candidate]){
-        line_sub = cTol_orig(index_ref_sub[candidate]);
-        line_sub = sub(line_sub, line_orig);
+    Line line_perf = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    if(initialized[candidate][2] && occupied[candidate][2]){
+        line_perf = cTol_orig(candidate);
+        // recover the XORED line
+        Line line_perf_xor = cTol_orig(index_ref_perf[candidate]);
+        Line recover = xxor(line_perf, line_perf_xor);
         for(int i = 0; i < 64; i++){
-            data_array_sub[candidate * 64 + i] = (char) line_sub.Byte[i];
+            data_array_perf[index_ref_perf[candidate] * 64 + i] = (char) recover.Byte[i];
         }
-        sizes[candidate][2] = countLine(line_sub);
+        occupied[index_ref_perf[candidate]][2] = 0;
+        occupied[candidate][2] = 0;
+        initialized[candidate][2] = 0;
   	}
-  	else
-     line_sub = compare_sub(line_orig, candidate);
+     line_perf = compare_perfect(line_orig, candidate);
      
-   if(memAccess % 100 == 0){
+   /*if(memAccess % 100 == 0){
      Line perf = compare_perfect(line_orig, candidate);
-   }
-		
+   }*/
     calcRate_raw(countLine(line_orig), countLine(line), countFlip(line_orig), countFlip(line));
+		calcRatePerf_raw(countLine(line_orig), countLine(line_perf), countFlip(line_orig), countFlip(line_perf));
     //calcRate_orig_raw(64, countLine(line_orig), countFlip(line_orig));
 
     // apply BDI on lines
@@ -251,6 +276,7 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
     
     // print result to files
     calcRate(countLine(line_orig), countLine(line), countFlip(line_orig), countFlip(line));
+    calcRatePerf(countLine(line_orig), countLine(line_perf), countFlip(line_orig), countFlip(line_perf));
    
    if(memAccess % 100 == 0){
      printf("here.\n");

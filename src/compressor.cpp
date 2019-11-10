@@ -2,12 +2,16 @@
 
 int orig_size;
 int xor_size;
+int xor_size_perf;
 int orig_size_bdi;
 int xor_size_bdi;
+int xor_size_bdi_perf;
 int flip_orig_size;
 int flip_xor_size;
+int flip_xor_size_perf;
 int flip_orig_size_bdi;
 int flip_xor_size_bdi;
+int flip_xor_size_bdi_perf;
 FILE *f = fopen("file.txt", "w");
 FILE *f1 = fopen("fileRaw.txt", "w");
 
@@ -23,6 +27,13 @@ double calcRate(int alloc, int comp, int orig_flip, int flip){
     flip_xor_size_bdi += flip;
 	//printf("%d / %d\n", comp, alloc);
     fprintf(f, "%1f, %1f\n", (static_cast<double>(flip_orig_size_bdi)/static_cast<double>(flip_xor_size_bdi)), (static_cast<double>(orig_size_bdi)/static_cast<double>(xor_size_bdi)));
+    return 0;
+}
+double calcRatePerf(int alloc, int comp, int orig_flip, int flip){
+    xor_size_bdi_perf += comp;
+    flip_xor_size_bdi_perf += flip;
+	//printf("%d / %d\n", comp, alloc);
+    fprintf(f, "%1f, %1f\n", (static_cast<double>(flip_orig_size_bdi)/static_cast<double>(flip_xor_size_bdi_perf)), (static_cast<double>(orig_size_bdi)/static_cast<double>(xor_size_bdi_perf)));
     return 0;
 }
 /*
@@ -50,6 +61,13 @@ double calcRate_raw(int alloc, int comp, int orig_flip, int flip){
     flip_xor_size += flip;
 	//printf("%d / %d\n", comp, alloc);
     fprintf(f1, "%1f, %1f\n", (static_cast<double>(flip_orig_size)/static_cast<double>(flip_xor_size)), (static_cast<double>(orig_size)/static_cast<double>(xor_size)));
+    return 0;
+}
+double calcRatePerf_raw(int alloc, int comp, int orig_flip, int flip){
+    xor_size_perf += comp;
+    flip_xor_size_perf += flip;
+	//printf("%d / %d\n", comp, alloc);
+    fprintf(f1, "%1f, %1f\n", (static_cast<double>(flip_orig_size)/static_cast<double>(flip_xor_size_perf)), (static_cast<double>(orig_size)/static_cast<double>(xor_size_perf)));
     return 0;
 }
 /*
