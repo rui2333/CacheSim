@@ -1,9 +1,9 @@
 #include "compressor.h"
 #include "visualize.h"
 //
-extern char* data_array; 
-extern char* data_array_sub; 
-extern char* data_array_orig;
+//extern unsigned char* data_array; 
+extern unsigned char* data_array_sub; 
+extern unsigned char* data_array_orig;
 extern int max_size;
 extern int compress_size;
 extern int compress_size_sub;
@@ -29,21 +29,21 @@ void visualize(int start, int end){
 	}
 }
 void TestPrint(int index){
-	int zeroes_orig = 0;
-	int zeroes_xor = 0;
+	//int zeroes_orig = 0;
+	//int zeroes_xor = 0;
 	printf("ORIG: ");
 	for(int i = 0 ; i < 64; i++){
 		printf("|%u", (int)data_array_orig[index * 64 + i]);
-		zeroes_orig += count_zeroes((unsigned int)data_array_orig[index * 64 + i]);
+		//zeroes_orig += count_zeroes((unsigned int)data_array_orig[index * 64 + i]);
 	}
 	printf("|\n");
 	printf("XOR: ");
-	for(int i = 0 ; i < 64; i++){
+	for(int i = 0 ; i < 64 ; i++){
 		printf("|%u", (int)data_array[index * 64 +i]);	
-		zeroes_xor += count_zeroes((unsigned int)data_array[index * 64 + i]);
+		//zeroes_xor += count_zeroes((unsigned int)data_array[index * 64 + i]);
 	}
 	printf("|\n");
-	printf("zeroes_orig is %u and zeroes_xor is %u\n", zeroes_orig, zeroes_xor);
+	//printf("zeroes_orig is %u and zeroes_xor is %u\n", zeroes_orig, zeroes_xor);
 }
 unsigned int count_zeroes(unsigned int n) {
     int count = 0;

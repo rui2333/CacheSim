@@ -11,10 +11,10 @@
 #include <algorithm>    // std::min
 #include "visualize.h"
 using namespace std;
-extern char* data_array;// = (char*)malloc(32768 * 64);
+extern unsigned char* data_array;// = (char*)malloc(32768 * 64);
 typedef unsigned char BYTE;
 typedef struct Line{
-	char Byte[64];
+	unsigned char Byte[64];
 }Line;
 Line add(Line l1, Line l2);
 Line xxor(Line l1, Line l2);

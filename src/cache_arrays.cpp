@@ -33,9 +33,9 @@ extern int index_ref_sub[32768];
 extern int index_ref_perf[32768];
 extern int sizes[32768][3];
 extern int size;
-extern char* data_array; // = (char*)malloc(32768 * 64);
-extern char* data_array_sub; // = (char*)malloc(32768 * 64);
-extern char* data_array_perf; // = (char*)malloc(32768 * 64);
+extern unsigned char* data_array; // = (char*)malloc(32768 * 64);
+extern unsigned char* data_array_sub; // = (char*)malloc(32768 * 64);
+extern unsigned char* data_array_perf; // = (char*)malloc(32768 * 64);
 Address record[1024];
 extern char* data_array_orig;//[327680 * 64];
 Line evicted_line;
@@ -205,54 +205,60 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
 
     //printf("We are in postinsertL2 for addr %ld\n", lineAddr);
     // get line from memory
+    printf("We are in postinsertL2 for addr 0x%x\n", lineAddr);
+    // get line from memory
     for(int i = 0 ; i < 64; i ++){
-            line_orig.Byte[i]= (*((char*) ((array[candidate] << 6) + i)));
+            line_orig.Byte[i]= (*((unsigned char*) ((array[candidate] << 6) + i)));
     }
     sizes[candidate][0] = countLine(line_orig);
     // on eviction
     if(index_ref[candidate]){
-        printf("ocean address %lx\n", lineAddr);
+        printf("ocean address 0x%x\n", lineAddr);
         Line reference = cTol_orig(index_ref[candidate]);
-        Line reference_xor = cTol(index_ref[candidate]);
-        calcRate_raw(0, countLine(reference_xor), 0, countFlip(reference_xor));
-        reference_xor = compress(reference_xor);
-        calcRate(0, countLine(reference_xor), 0, countFlip(reference_xor));
         if(countLine(xxor(reference, line_orig)) > countLine(line_orig)){
             line = xxor(reference, line_orig);
             for(int i = 0; i < 64; i++){
-                data_array[candidate * 64 + i] = (char) line.Byte[i];
-                data_array[index_ref[candidate] * 64 + i] = (char) line.Byte[i];
+                data_array[candidate * 64 + i] = (unsigned char) line.Byte[i];
+                data_array[index_ref[candidate] * 64 + i] = (unsigned char) line.Byte[i];
             }
         }
-        else{
+        else
             line = compare(line_orig, candidate);
-            if(occupied[candidate][0]){
-            Line reference = cTol_orig(index_ref[candidate]);
-            calcRate_raw(0, -countLine(reference), 0, -countFlip(reference));
-            reference = compress(reference);
-            calcRate(0, -countLine(reference), 0, -countFlip(reference));
-            }
-        }
         sizes[candidate][1] = countLine(line);
     }
     // simple insertion
     else{
-        printf("island address %lx\n", lineAddr);
+        printf("island address 0x%x\n", lineAddr);
+        Line reference = cTol_orig(index_ref[candidate]);
         line = compare(line_orig, candidate);
-        if(occupied[candidate][0]){
-          Line reference = cTol_orig(index_ref[candidate]);
-          calcRate_raw(0, -countLine(reference), 0, -countFlip(reference));
-          reference = compress(reference);
-          calcRate(0, -countLine(reference), 0, -countFlip(reference));
-        }
+        calcRate_raw(0, -countLine(reference), 0, -countFlip(reference));
+        reference = compress(reference);
+        calcRate(0, -countLine(reference), 0, -countFlip(reference));
     }
     // sub: not in use
+    if(index_ref_sub[candidate]){
+        line_sub = cTol_orig(index_ref_sub[candidate]);
+        line_sub = sub(line_sub, line_orig);
+        for(int i = 0; i < 64; i++){
+            data_array_sub[candidate * 64 + i] = (unsigned char) line_sub.Byte[i];
+        }
+        sizes[candidate][2] = countLine(line_sub);
+  	}
+  	else
+     line_sub = compare_sub(line_orig, candidate);
+     
     Line line_perf = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     if(initialized[candidate][2] && occupied[candidate][2]){
         line_perf = cTol_orig(candidate);
         // recover the XORED line
         Line line_perf_xor = cTol_orig(index_ref_perf[candidate]);
         Line recover = xxor(line_perf, line_perf_xor);
+        calcRatePerf_raw(0, -countLine(recover), 0, -countFlip(recover));
+        Line recover_comp = compress(recover);
+        calcRatePerf_raw(0, -countLine(recover_comp), 0, -countFlip(recover_comp));
+        calcRatePerf_raw(0, countLine(line_perf_xor), 0, countFlip(line_perf_xor));
+        line_perf_xor = compress(line_perf_xor);
+        calcRatePerf_raw(0, countLine(line_perf_xor), 0, countFlip(line_perf_xor));
         for(int i = 0; i < 64; i++){
             data_array_perf[index_ref_perf[candidate] * 64 + i] = (char) recover.Byte[i];
         }
@@ -272,6 +278,7 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
     // apply BDI on lines
     line = compress(line);
     line_sub = compress(line_sub);
+    line_perf = compress(line_perf);
     line_orig = compress(line_orig);
     
     // print result to files

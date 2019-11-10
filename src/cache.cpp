@@ -33,7 +33,7 @@
 int l1 = 0;
 extern unsigned long long evicted_line;
 note* ref = (note*) malloc(sizeof(note));
-extern char* data_array_orig;//[327680 * 64];
+extern unsigned char* data_array_orig;//[327680 * 64];
 int DirtyWB = 0;
 int CleanWB = 0;
 int load = 0;
