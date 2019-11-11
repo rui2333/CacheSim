@@ -11,41 +11,42 @@
 #include <algorithm>    // std::min
 #include "visualize.h"
 using namespace std;
-extern unsigned char* data_array;// = (char*)malloc(32768 * 64);
-typedef unsigned char BYTE;
+extern unsigned char* data_array;
+
 typedef struct Line{
 	unsigned char Byte[64];
 }Line;
-Line add(Line l1, Line l2);
-Line xxor(Line l1, Line l2);
-Line sub(Line l1, Line l2);
+
+// calculate size
 int countWidth(unsigned short int num);
-int getTag(long long line);
 int countLine(Line line);
-double calcRate(int alloc, int comp, int orig_flip, int flip);
-double calcRatePerf(int alloc, int comp, int orig_flip, int flip);
-double calcRate_sub(int alloc, int comp, int flip);
-double calcRate_orig(int alloc, int comp, int flip);
-double calcRate_raw(int alloc, int comp, int orig_flip, int flip);
-double calcRatePerf_raw(int alloc, int comp, int orig_flip, int flip);
-double calcRate_sub_raw(int alloc, int comp, int flip);
-double calcRate_orig_raw(int alloc, int comp, int flip);
-Line compress(Line line);
 int countFlip(Line line);
-Line compare(Line line, uint32_t tag);
-Line compare_sub(Line line, uint32_t tag);
-Line compare_perfect(Line line, uint32_t tag);
+// get data from array
 Line cTol(int index);
 Line cTol_sub(int index);
 Line cTol_orig(int index);
 Line cTol_perf(int index);
+// insert into array
+Line compare(Line line, uint32_t tag);
+Line compare_perfect(Line line, uint32_t tag);
 void LongToLine (Line line, uint32_t tag);
-int recover(int tag);
-int recover_sub(int tag);
-Line replace(Line line, int tag);
-Line replace_sub(Line line, int tag);
+// operation for data structure
+Line add(Line l1, Line l2);
+Line xxor(Line l1, Line l2);
+Line sub(Line l1, Line l2);
+// helper function
+int getTag(long long line);
 void printline(Line line);
 int Empty(Line line);
 double best_compression_rate();
 double best_possible_rate();
 Line compare_perfect(Line line, uint32_t tag);
+
+double calcRate(int alloc, int comp, int orig_flip, int flip);
+double calcRatePerf(int alloc, int comp, int orig_flip, int flip);
+double calcRate_raw(int alloc, int comp, int orig_flip, int flip);
+double calcRatePerf_raw(int alloc, int comp, int orig_flip, int flip);
+Line compress(Line line);
+
+// 
+Line compare_sub(Line line, uint32_t tag);

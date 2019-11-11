@@ -94,50 +94,51 @@ void SetAssocArray::postinsert(const Address lineAddr, const MemReq* req, uint32
     rp->replaced(candidate);
     
     Line line = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  
-    Line line_sub = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  
-    Line line_orig = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};   
+    Line line_orig = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	// silent eviction
 	if(l1 == 1){
-		line_orig = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-		for(int i = 0 ; i < 64; i ++){
-				line_orig.Byte[i]= (*((char*) ((array[candidate] << 6) + i)));
-		}
-		sizes[candidate][0] = countLine(line_orig);
 		if(index_ref[candidate]){
-		    line = cTol_orig(index_ref[candidate]);
-		    line = xxor(line, line_orig);
-		    for(int i = 0; i < 64; i++){
-		        data_array[candidate * 64 + i] = (char) line.Byte[i];
-		    }
-		    sizes[candidate][1] = countLine(line);
-		  }
-		else
-		    line = compare(line_orig, candidate);
-		if(index_ref_sub[candidate]){
-			line_sub = cTol_orig(index_ref_sub[candidate]);
-			line_sub = sub(line_sub, line_orig);
-			for(int i = 0; i < 64; i++){
-			    data_array_sub[candidate * 64 + i] = (char) line_sub.Byte[i];
+			//printf("ocean address 0x%x\n", lineAddr);
+			Line reference = cTol_orig(index_ref[candidate]);
+			if(countLine(xxor(reference, line_orig)) > countLine(line_orig)){
+				Line old_val = cTol_orig(candidate);
+				Line old_val_xor = xxor(cTol_orig(candidate), reference);
+				calcRate_raw(-countLine(old_val), countLine(old_val_xor), countFlip(old_val), countFlip(old_val_xor));
+				old_val_xor = compress(old_val_xor);
+				old_val = compress(old_val);
+				calcRate(-countLine(old_val), countLine(old_val_xor), countFlip(old_val), countFlip(old_val_xor));
+				line = xxor(reference, line_orig);
+				LongToLine(line_orig, candidate);
+				for(int i = 0; i < 64; i++){
+					data_array[candidate * 64 + i] = (unsigned char) line.Byte[i];
+					data_array[index_ref[candidate] * 64 + i] = (unsigned char) line.Byte[i];
+				}
 			}
-			sizes[candidate][2] = countLine(line_sub);
-	  	}
-	  	else
-		    line_sub = compare_sub(line_orig, candidate);
-		
-		line = compress(line);
-		line_sub = compress(line_sub);
-		line_orig = compress(line_orig);
-		
-		//calcRate(64, countLine(line), countFlip(line));
-		//calcRate_sub(64, countLine(line_sub), countFlip(line_sub));
-		//calcRate_orig(64, countLine(line_orig), countFlip(line_orig));
+			else{
+				// dereference
+				Line reference = cTol_orig(index_ref[candidate]);
+				Line old_val = cTol_orig(candidate);
+				Line old_val_xor = xxor(cTol_orig(candidate), reference);
+				calcRate_raw(-countLine(old_val), countLine(old_val_xor)+countLine(reference), countFlip(old_val), countFlip(old_val_xor)+countFlip(reference));
+				old_val_xor = compress(old_val_xor);
+				old_val = compress(old_val);
+				reference = compress(reference);
+				calcRate(-countLine(old_val), countLine(old_val_xor)+countLine(reference), countFlip(old_val), countFlip(old_val_xor)+countFlip(reference));
+				occupied[candidate][1] = 0;
+				occupied[index_ref[candidate]][1] = 0;
+				line = compare(line_orig, candidate);
+			}
+		}
     }
 	
+	/*
     for(int i = 0; i < 1024; i++){
 		if(record[i] == candidate){
 			record[i] = lineAddr;
 			break;
 		}
     }
+	*/
     array[candidate] = lineAddr;
 	
     rp->update(candidate, req);
@@ -183,29 +184,23 @@ Line* SetAssocArray::refresh(const Address lineAddr, const MemReq* req, uint32_t
 }
 
 void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint32_t candidate) {
-    memAccess ++;
-    cout << memAccess << endl;
-    if (initialized[candidate][0])
-    {
-        cout << "postinsertion on " << candidate << " of " << hex << array[candidate] << endl;
-    }
+    //memAccess ++;
+    //cout << memAccess << endl;
+    //if (initialized[candidate][0])
+    //{
+    //    cout << "postinsertion on " << candidate << " of " << hex << array[candidate] << endl;
+    //}
     
     rp->replaced(candidate);
-    Line former_line = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    // get line from memory
-    for(int i = 0 ; i < 64; i ++){
-        former_line.Byte[i]= (*((char*) ((array[candidate] << 6) + i)));
-    }
     array[candidate] = lineAddr;
-    cout << "postinsertion now on " << candidate << " of " << hex << array[candidate] << endl;
+    // cout << "postinsertion now on " << candidate << " of " << hex << array[candidate] << endl;
     // initialize each parameters
     Line line = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  
     Line line_sub = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  
     Line line_orig = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};     
 
-    //printf("We are in postinsertL2 for addr %ld\n", lineAddr);
-    // get line from memory
-    printf("We are in postinsertL2 for addr 0x%x\n", lineAddr);
+    // printf("We are in postinsertL2 for addr %ld\n", lineAddr);
+    // printf("We are in postinsertL2 for addr 0x%x\n", lineAddr);
     // get line from memory
     for(int i = 0 ; i < 64; i ++){
             line_orig.Byte[i]= (*((unsigned char*) ((array[candidate] << 6) + i)));
@@ -216,15 +211,33 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
         printf("ocean address 0x%x\n", lineAddr);
         Line reference = cTol_orig(index_ref[candidate]);
         if(countLine(xxor(reference, line_orig)) > countLine(line_orig)){
+			Line old_val = cTol_orig(candidate);
+			Line old_val_xor = xxor(cTol_orig(candidate), reference);
+			calcRate_raw(-countLine(old_val), countLine(old_val_xor), countFlip(old_val), countFlip(old_val_xor));
+			old_val_xor = compress(old_val_xor);
+			old_val = compress(old_val);
+			calcRate(-countLine(old_val), countLine(old_val_xor), countFlip(old_val), countFlip(old_val_xor));
             line = xxor(reference, line_orig);
+			LongToLine(line_orig, candidate);
             for(int i = 0; i < 64; i++){
                 data_array[candidate * 64 + i] = (unsigned char) line.Byte[i];
                 data_array[index_ref[candidate] * 64 + i] = (unsigned char) line.Byte[i];
             }
         }
-        else
+        else{
+			// dereference
+			Line reference = cTol_orig(index_ref[candidate]);
+			Line old_val = cTol_orig(candidate);
+			Line old_val_xor = xxor(cTol_orig(candidate), reference);
+			calcRate_raw(-countLine(old_val), countLine(old_val_xor)+countLine(reference), countFlip(old_val), countFlip(old_val_xor)+countFlip(reference));
+			old_val_xor = compress(old_val_xor);
+			old_val = compress(old_val);
+			reference = compress(reference);
+			calcRate(-countLine(old_val), countLine(old_val_xor)+countLine(reference), countFlip(old_val), countFlip(old_val_xor)+countFlip(reference));
+			occupied[candidate][1] = 0;
+			occupied[index_ref[candidate]][1] = 0;
             line = compare(line_orig, candidate);
-        sizes[candidate][1] = countLine(line);
+		}
     }
     // simple insertion
     else{
@@ -235,18 +248,7 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
         reference = compress(reference);
         calcRate(0, -countLine(reference), 0, -countFlip(reference));
     }
-    // sub: not in use
-    if(index_ref_sub[candidate]){
-        line_sub = cTol_orig(index_ref_sub[candidate]);
-        line_sub = sub(line_sub, line_orig);
-        for(int i = 0; i < 64; i++){
-            data_array_sub[candidate * 64 + i] = (unsigned char) line_sub.Byte[i];
-        }
-        sizes[candidate][2] = countLine(line_sub);
-  	}
-  	else
-     line_sub = compare_sub(line_orig, candidate);
-     
+    // optimal candidate
     Line line_perf = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     if(initialized[candidate][2] && occupied[candidate][2]){
         line_perf = cTol_orig(candidate);
@@ -266,18 +268,13 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
         occupied[candidate][2] = 0;
         initialized[candidate][2] = 0;
   	}
-     line_perf = compare_perfect(line_orig, candidate);
+    line_perf = compare_perfect(line_orig, candidate);
      
-   /*if(memAccess % 100 == 0){
-     Line perf = compare_perfect(line_orig, candidate);
-   }*/
     calcRate_raw(countLine(line_orig), countLine(line), countFlip(line_orig), countFlip(line));
-		calcRatePerf_raw(countLine(line_orig), countLine(line_perf), countFlip(line_orig), countFlip(line_perf));
-    //calcRate_orig_raw(64, countLine(line_orig), countFlip(line_orig));
+	calcRatePerf_raw(countLine(line_orig), countLine(line_perf), countFlip(line_orig), countFlip(line_perf));
 
     // apply BDI on lines
     line = compress(line);
-    line_sub = compress(line_sub);
     line_perf = compress(line_perf);
     line_orig = compress(line_orig);
     
@@ -285,11 +282,6 @@ void SetAssocArray::postinsertL2(const Address lineAddr, const MemReq* req, uint
     calcRate(countLine(line_orig), countLine(line), countFlip(line_orig), countFlip(line));
     calcRatePerf(countLine(line_orig), countLine(line_perf), countFlip(line_orig), countFlip(line_perf));
    
-   if(memAccess % 100 == 0){
-     printf("here.\n");
-     fprintf(ability_file, "best rate:%1f ", best_possible_rate());
-     //fprintf(compressibility, "best possible rate: %1f", best_compression_rate());
-   }
     	
     rp->update(candidate, req);
     TestPrint(candidate);
